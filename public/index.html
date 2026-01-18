@@ -2,17 +2,18 @@
 <html lang="ar">
 <head>
   <meta charset="UTF-8">
-  <title>لعبة شطرنج عبد الرحمن محمد فتحي</title>
+  <title>لعبة شطرنج أونلاين</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
   <style>
     body { font-family: Tahoma, sans-serif; text-align: center; }
-    #board { width: 400px; margin: 20px auto; }
-    #messages { margin-top: 20px; text-align: left; width: 400px; margin-left: auto; margin-right: auto; }
-    input, button { margin: 5px; padding: 8px; }
+    #board { width: 90vw; max-width: 400px; margin: 20px auto; }
+    #messages { margin-top: 20px; text-align: left; width: 90%; max-width: 400px; margin-left: auto; margin-right: auto;
+                max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; }
+    input, button { margin: 5px; padding: 12px; font-size: 16px; width: 90%; max-width: 400px; }
   </style>
 </head>
 <body>
-  <h1>لعبة شطرنج عبد الرحمن  محمد فتحي </h1>
+  <h1>لعبة شطرنج أونلاين</h1>
 
   <div>
     <input id="playerName" placeholder="اكتب اسمك هنا">
@@ -20,8 +21,9 @@
   </div>
 
   <div>
-    <input id="friendName" placeholder="اسم صديقك">
-    <button onclick="inviteFriend()">إرسال دعوة</button>
+    <p>الـ ID الخاص بك: <span id="myId"></span></p>
+    <input id="friendId" placeholder="اكتب ID صديقك">
+    <button onclick="inviteById()">إرسال دعوة بالـ ID</button>
   </div>
 
   <div id="board"></div>
@@ -52,28 +54,32 @@
       document.getElementById("messages").innerHTML += `<p>انت دخلت باسم: ${playerName}</p>`;
     }
 
-    function inviteFriend() {
-      let friendName = document.getElementById("friendName").value;
-      if (friendName.trim() === "") {
-        alert("اكتب اسم صديقك أولاً");
+    socket.on('yourId', (id) => {
+      document.getElementById("myId").innerText = id;
+    });
+
+    function inviteById() {
+      let friendId = document.getElementById("friendId").value;
+      if (friendId.trim() === "") {
+        alert("اكتب ID صديقك أولاً");
         return;
       }
-      socket.emit("invite", friendName);
-      document.getElementById("messages").innerHTML += `<p>تم إرسال دعوة إلى ${friendName}</p>`;
+      socket.emit("inviteById", friendId);
+      document.getElementById("messages").innerHTML += `<p>تم إرسال دعوة بالـ ID ${friendId}</p>`;
     }
 
     socket.on("receiveInvite", (data) => {
-      if (data.to === playerName) {
+      if (data.from !== playerName) {
         let accept = confirm(`${data.from} دعاك للعبة، هل توافق؟`);
-        socket.emit("inviteResponse", { from: data.from, to: playerName, accept: accept });
+        socket.emit("inviteResponse", { fromId: data.fromId, toId: socket.id, accept: accept });
       }
     });
 
     socket.on("inviteResult", (data) => {
       if (data.accept) {
-        document.getElementById("messages").innerHTML += `<p>${data.to} وافق على الدعوة!</p>`;
+        document.getElementById("messages").innerHTML += `<p>تم قبول الدعوة!</p>`;
       } else {
-        document.getElementById("messages").innerHTML += `<p>${data.to} رفض الدعوة.</p>`;
+        document.getElementById("messages").innerHTML += `<p>تم رفض الدعوة.</p>`;
       }
     });
 
