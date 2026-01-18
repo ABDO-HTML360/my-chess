@@ -49,7 +49,7 @@ io.on('connection', (socket) => {
 
         // لو اللعبة انتهت
         if (game.game_over()) {
-          io.emit('message', `اللعبة انتهت! النتيجة: ${game.result}`);
+          io.emit('message', `اللعبة انتهت!`);
         }
       } else {
         socket.emit('message', 'حركة غير صحيحة!');
