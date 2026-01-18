@@ -3,32 +3,39 @@
 <head>
   <meta charset="UTF-8">
   <title>لعبة شطرنج عبد الرحمن محمد فتحي</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
   <style>
-    body { font-family: Tahoma, Arial; background: #f0f0f0; text-align: center; margin: 0; padding: 10px; }
-    h1 { font-size: 20px; margin-bottom: 10px; }
-    #board { width: 95vw; max-width: 400px; margin: 10px auto; }
-    input { padding: 10px; font-size: 16px; width: 80%; max-width: 300px; margin: 10px auto; display: block; border: 1px solid #ccc; border-radius: 5px; }
-    .btn { padding: 12px 20px; margin: 5px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; width: 45%; }
-    .btn:hover { background: #45a049; }
-    #messages { margin-top: 15px; background: #fff; padding: 10px; border: 1px solid #ccc; width: 95vw; max-width: 400px; margin-left: auto; margin-right: auto; text-align: left; font-size: 14px; overflow-y: auto; max-height: 150px; }
+    body { font-family: Tahoma, sans-serif; text-align: center; }
+    #board { width: 400px; margin: 20px auto; }
+    #messages { margin-top: 20px; text-align: left; width: 400px; margin-left: auto; margin-right: auto; }
+    input, button { margin: 5px; padding: 8px; }
   </style>
+</head>
+<body>
+  <h1>لعبة شطرنج عبد الرحمن  محمد فتحي </h1>
+
+  <div>
+    <input id="playerName" placeholder="اكتب اسمك هنا">
+    <button onclick="joinGame()">دخول</button>
+  </div>
+
+  <div>
+    <input id="friendName" placeholder="اسم صديقك">
+    <button onclick="inviteFriend()">إرسال دعوة</button>
+  </div>
+
+  <div id="board"></div>
+
+  <div>
+    <button onclick="resetGame()">إعادة اللعبة</button>
+    <button onclick="undoMove()">رجوع خطوة</button>
+  </div>
+
+  <div id="messages"></div>
+
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.13.4/chess.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css"/>
-</head>
-<body>
-  <h1>لعبة شطرنج عبد الرحمن محمد فتحي</h1>
-  <input type="text" id="playerName" placeholder="اكتب اسمك هنا">
-  <button class="btn" onclick="joinGame()">دخول</button>
-  <input type="text" id="friendName" placeholder="اكتب اسم صديقك">
-  <button class="btn" onclick="inviteFriend()">إرسال دعوة</button>
-  <div id="board"></div>
-  <button class="btn" onclick="resetGame()">إعادة</button>
-  <button class="btn" onclick="undoMove()">رجوع</button>
-  <div id="messages"></div>
-
   <script>
     var socket = io();
     var board = null;
@@ -70,7 +77,7 @@
       }
     });
 
-    function onDragStart (source, piece, position, orientation) {
+    function onDragStart(source, piece, position, orientation) {
       if (game.game_over()) return false;
       if ((game.turn() === 'w' && piece.search(/^b/) !== -1) ||
           (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
@@ -78,7 +85,7 @@
       }
     }
 
-    function onDrop (source, target) {
+    function onDrop(source, target) {
       var move = game.move({ from: source, to: target, promotion: 'q' });
       if (move === null) return 'snapback';
       board.position(game.fen());
@@ -88,11 +95,13 @@
     function resetGame() {
       game.reset();
       board.start();
+      socket.emit('reset');
     }
 
     function undoMove() {
       game.undo();
       board.position(game.fen());
+      socket.emit('undo');
     }
 
     board = Chessboard('board', {
@@ -108,8 +117,20 @@
 
     socket.on('move', (data) => {
       game.move({ from: data.move.from, to: data.move.to, promotion: 'q' });
-      board.position(game.fen());
+      board.position(data.fen);
       document.getElementById("messages").innerHTML += `<p>حركة من ${data.player}</p>`;
+    });
+
+    socket.on('reset', (data) => {
+      game.reset();
+      board.position(data.fen);
+      document.getElementById("messages").innerHTML += `<p>تمت إعادة اللعبة</p>`;
+    });
+
+    socket.on('undo', (data) => {
+      game.undo();
+      board.position(data.fen);
+      document.getElementById("messages").innerHTML += `<p>تم الرجوع خطوة للخلف</p>`;
     });
   </script>
 </body>
